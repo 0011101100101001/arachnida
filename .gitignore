@@ -1,6 +1,14 @@
 # Spider
-
+spider
+data/
+!spider/
+!spider.go
 
 # Scorpion
+scorpion
+!scorpion/
 target/
 Cargo.lock
+
+# IDE
+.vscode/
