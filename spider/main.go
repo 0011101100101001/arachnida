@@ -5,35 +5,38 @@ import (
 	"fmt"
 	"log"
 	"os"
-)
-
-const (
-	Default = "\033[0m"
-	Bold    = "\033[1m"
-	Dim     = "\033[2m"
-	Red     = "\033[31m"
-	Green   = "\033[32m"
-	Yellow  = "\033[33m"
-	Blue    = "\033[34m"
-	White   = "\033[37m"
+	"strings"
 )
 
 func parseConfig() (Config, error) {
 	recursive := flag.Bool("r", false,
-		"-r: recursively downloads the images in a URL received as a parameter.")
+		"recursively downloads the images in a URL received as a parameter.")
 
 	depth := flag.Uint("l", 5,
-		"-r -l [N]: indicates the maximum depth level of the recursive download.")
+		"indicates the maximum depth level of the recursive download.")
 
 	path := flag.String("p", "./data/",
-		"-p [PATH]: indicates the path where the downloaded files will be saved.")
+		"indicates the path where the downloaded files will be saved.")
 
 	flag.Parse()
+
 	if flag.NArg() == 0 {
 		return Config{}, fmt.Errorf("missing URL")
 	}
 
 	url := flag.Args()
+
+	rawURL := url[0]
+	if !strings.HasPrefix(rawURL, "http://") &&
+		!strings.HasPrefix(rawURL, "https://") {
+		rawURL = "https://" + rawURL
+	}
+
+	if len(*path) == 0 {
+		return Config{}, fmt.Errorf("path cannot be empty")
+	} else if (*path)[len(*path)-1] != '/' {
+		*path += "/"
+	}
 
 	fmt.Println(Bold+Blue+"Url:"+Bold+White, url[0])
 	fmt.Println(Bold+Blue+"Recursive:"+Bold+White, *recursive)
@@ -44,7 +47,7 @@ func parseConfig() (Config, error) {
 		isRecursive: *recursive,
 		depth:       *depth,
 		path:        *path,
-		url:         url[0],
+		url:         rawURL,
 	}, nil
 }
 
@@ -53,7 +56,8 @@ func main() {
 
 	config, err := parseConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Usage: ./spider [-rlp] URL")
+		fmt.Fprintln(os.Stderr, Bold+Red+"Error:"+Bold+White, err.Error()+Default)
+		fmt.Fprintln(os.Stderr, "Usage: ./spider [-rlp] URL")
 		os.Exit(2)
 	}
 
