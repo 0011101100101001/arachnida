@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 )
@@ -38,11 +37,6 @@ func parseConfig() (Config, error) {
 		*path += "/"
 	}
 
-	fmt.Println(Bold+Blue+"Url:"+Bold+White, url[0])
-	fmt.Println(Bold+Blue+"Recursive:"+Bold+White, *recursive)
-	fmt.Println(Bold+Blue+"Depth:"+Bold+White, *depth)
-	fmt.Println(Bold+Blue+"Path:"+Bold+White, *path+Default)
-
 	return Config{
 		isRecursive: *recursive,
 		depth:       *depth,
@@ -52,17 +46,16 @@ func parseConfig() (Config, error) {
 }
 
 func main() {
-	log.SetFlags(0)
-
 	config, err := parseConfig()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, Bold+Red+"Error:"+Bold+White, err.Error()+Default)
-		fmt.Fprintln(os.Stderr, "Usage: ./spider [-rlp] URL")
+		fmt.Fprintln(os.Stderr, Bold+Red+"Error:"+Default, err.Error())
+		fmt.Fprintln(os.Stderr,
+			Bold+White+"Usage:"+Default+"./spider [-rlp] URL")
 		os.Exit(2)
 	}
 
 	spider := NewSpider(config)
 	if err := spider.Run(); err != nil {
-		log.Fatalf("spider: %v", err)
+		fmt.Fprintln(os.Stderr, Bold+Red+"Error:"+Default, err.Error())
 	}
 }

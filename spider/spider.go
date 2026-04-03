@@ -19,7 +19,11 @@ const (
 	Green   = "\033[32m"
 	Yellow  = "\033[33m"
 	Blue    = "\033[34m"
+	Magenta = "\033[35m"
 	White   = "\033[37m"
+	Header  = "░▒█▀▀▀█░▒█▀▀█░▀█▀░▒█▀▀▄░▒█▀▀▀░▒█▀▀▄\n" +
+		"░░▀▀▀▄▄░▒█▄▄█░▒█░░▒█░▒█░▒█▀▀▀░▒█▄▄▀\n" +
+		"░▒█▄▄▄█░▒█░░░░▄█▄░▒█▄▄█░▒█▄▄▄░▒█░▒█"
 )
 
 type Config struct {
@@ -30,99 +34,112 @@ type Config struct {
 }
 
 type Spider struct {
-	cfg        Config
+	config     Config
 	visited    map[string]bool
 	downloaded map[string]bool
-	muImage    sync.Mutex
-	muCrawl    sync.Mutex
-	wg         sync.WaitGroup
+	mutexImage sync.Mutex
+	mutexCrawl sync.Mutex
+	waitGroup  sync.WaitGroup
 }
 
 var (
-	regexpImg    = regexp.MustCompile(`(?i)<img[^>]+\bsrc="([^"]+)"`)
+	regexpImage  = regexp.MustCompile(`(?i)<img[^>]+\bsrc="([^"]+)"`)
 	regexpAnchor = regexp.MustCompile(`(?i)<a[^>]+href="([^">]+)"`)
 )
 
-func NewSpider(cfg Config) *Spider {
+func NewSpider(config Config) *Spider {
 	return &Spider{
-		cfg:        cfg,
+		config:     config,
 		downloaded: make(map[string]bool),
 		visited:    make(map[string]bool),
 	}
 }
 
-func (s *Spider) Run() error {
-	if err := os.MkdirAll(s.cfg.path, 0755); err != nil {
+func (spider *Spider) Run() error {
+
+	spider.PrintConfig()
+
+	if err := os.MkdirAll(spider.config.path, 0755); err != nil {
 		return err
 	}
 
-	s.wg.Add(1)
+	spider.waitGroup.Add(1)
 	go func() {
-		err := s.CrawlURL(s.cfg.depth, s.cfg.url)
+		err := spider.CrawlURL(spider.config.depth, spider.config.url)
 		if err != nil {
 			fmt.Println("Error starting crawl:", err)
 		}
 	}()
-	s.wg.Wait()
+	spider.waitGroup.Wait()
 
 	return nil
 }
 
-func (s *Spider) CrawlURL(recursionDepth uint, rawURL string) error {
-	defer s.wg.Done()
+func (spider *Spider) PrintConfig() {
+	fmt.Println(Bold + Magenta + Header + "\n" + Default)
+	fmt.Println(Bold+Blue+"URL:"+Bold+White, spider.config.url)
+	fmt.Println(Bold+Blue+"Recursive:"+Bold+White, spider.config.isRecursive)
+	fmt.Println(Bold+Blue+"Depth:"+Bold+White, spider.config.depth)
+	fmt.Println(Bold+Blue+"Path:"+Bold+White, spider.config.path+"\n"+Default)
+}
 
-	s.muCrawl.Lock()
-	if s.visited[rawURL] || recursionDepth == 0 {
-		s.muCrawl.Unlock()
+func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error {
+	defer spider.waitGroup.Done()
+
+	spider.mutexCrawl.Lock()
+	if spider.visited[rawURL] || recursionDepth == 0 {
+		spider.mutexCrawl.Unlock()
 		return nil
 	}
-	s.visited[rawURL] = true
-	s.muCrawl.Unlock()
+	spider.visited[rawURL] = true
+	spider.mutexCrawl.Unlock()
 
-	fmt.Println(Bold + Yellow + rawURL + Default)
+	fmt.Println(Bold+Magenta+"Visite:  "+Bold+White, rawURL+Default)
 
 	resp, err := http.Get(rawURL)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Fprintln(os.Stderr, Red+"Error:"+Default, err)
 		return err
-	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		 return fmt.Errorf("GET %s: status %s", rawURL, resp.Status)
 	}
+
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("GET %s: status %s", rawURL, resp.Status)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
-	imgMatches := regexpImg.FindAllStringSubmatch(string(body), -1)
+	imageMatches := regexpImage.FindAllStringSubmatch(string(body), -1)
 	anchorMatches := regexpAnchor.FindAllStringSubmatch(string(body), -1)
 
 	baseURL, _ := url.Parse(rawURL)
-	if s.cfg.isRecursive {
+	if spider.config.isRecursive {
 		for _, match := range anchorMatches {
 			href := match[1]
-			absURL, err := baseURL.Parse(href)
+			absoluteURL, err := baseURL.Parse(href)
 			if err != nil {
 				continue
 			}
-			if absURL.Host == baseURL.Host {
-				s.wg.Add(1)
-				go s.CrawlURL(recursionDepth-1, absURL.String())
+			if absoluteURL.Host == baseURL.Host {
+				spider.waitGroup.Add(1)
+				go spider.CrawlURL(recursionDepth-1, absoluteURL.String())
 			}
 		}
 	}
 
-	for _, match := range imgMatches {
-		imgPath := match[1]
-		imgAbs, err := baseURL.Parse(imgPath)
+	for _, match := range imageMatches {
+		imagePath := match[1]
+		imageAbsolutePath, err := baseURL.Parse(imagePath)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		if hasImageExtension(imgAbs.Path) {
-			s.wg.Add(1)
-			go s.DownloadImage(imgAbs.String())
+		if hasImageExtension(imageAbsolutePath.Path) {
+			spider.waitGroup.Add(1)
+			go spider.DownloadImage(imageAbsolutePath.String())
 		}
 	}
 	return nil
@@ -136,44 +153,44 @@ func hasImageExtension(path string) bool {
 	return false
 }
 
-func (s *Spider) DownloadImage(imgURL string) error {
-	defer s.wg.Done()
+func (spider *Spider) DownloadImage(imageURL string) error {
+	defer spider.waitGroup.Done()
 
-	s.muImage.Lock()
-	if s.downloaded[imgURL] {
-		s.muImage.Unlock()
+	spider.mutexImage.Lock()
+	if spider.downloaded[imageURL] {
+		spider.mutexImage.Unlock()
 		return nil
 	}
-	s.muImage.Unlock()
+	spider.mutexImage.Unlock()
 
-	resp, err := http.Get(imgURL)
+	resp, err := http.Get(imageURL)
 	if err != nil {
-		fmt.Println("Failed to download:", imgURL, err)
+		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Default, imageURL)
 		return err
 	}
 	defer resp.Body.Close()
 
-	parts := strings.Split(imgURL, "/")
+	parts := strings.Split(imageURL, "/")
 	fileName := parts[len(parts)-1]
-	filePath := s.cfg.path + fileName
+	filePath := spider.config.path + fileName
 
 	out, err := os.Create(filePath)
 	if err != nil {
-		fmt.Println("Failed to create file:", filePath, err)
+		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Default, filePath)
 		return err
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		fmt.Println("Failed to save image:", imgURL, err)
+		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Default, imageURL)
 		return err
 	}
-	fmt.Println(Blue+"Downloaded:", imgURL+Default)
+	fmt.Println(Bold+Green+"Download:"+Bold+White, imageURL+Default)
 
-	s.muImage.Lock()
-	s.downloaded[imgURL] = true
-	s.muImage.Unlock()
+	spider.mutexImage.Lock()
+	spider.downloaded[imageURL] = true
+	spider.mutexImage.Unlock()
 
 	return nil
 }
