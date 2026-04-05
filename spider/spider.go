@@ -15,15 +15,12 @@ import (
 const (
 	Default = "\033[0m"
 	Bold    = "\033[1m"
+	Italic  = "\033[3m"
 	Red     = "\033[31m"
 	Green   = "\033[32m"
-	Yellow  = "\033[33m"
 	Blue    = "\033[34m"
 	Magenta = "\033[35m"
 	White   = "\033[37m"
-	Header  = "░▒█▀▀▀█░▒█▀▀█░▀█▀░▒█▀▀▄░▒█▀▀▀░▒█▀▀▄\n" +
-		"░░▀▀▀▄▄░▒█▄▄█░▒█░░▒█░▒█░▒█▀▀▀░▒█▄▄▀\n" +
-		"░▒█▄▄▄█░▒█░░░░▄█▄░▒█▄▄█░▒█▄▄▄░▒█░▒█"
 )
 
 type Config struct {
@@ -56,7 +53,6 @@ func NewSpider(config Config) *Spider {
 }
 
 func (spider *Spider) Run() error {
-
 	spider.PrintConfig()
 
 	if err := os.MkdirAll(spider.config.path, 0755); err != nil {
@@ -67,7 +63,7 @@ func (spider *Spider) Run() error {
 	go func() {
 		err := spider.CrawlURL(spider.config.depth, spider.config.url)
 		if err != nil {
-			fmt.Println("Error starting crawl:", err)
+			fmt.Fprintln(os.Stderr, Bold+Red+"Error:   "+Default, err)
 		}
 	}()
 	spider.waitGroup.Wait()
@@ -76,11 +72,28 @@ func (spider *Spider) Run() error {
 }
 
 func (spider *Spider) PrintConfig() {
-	fmt.Println(Bold + Magenta + Header + "\n" + Default)
-	fmt.Println(Bold+Blue+"URL:"+Bold+White, spider.config.url)
-	fmt.Println(Bold+Blue+"Recursive:"+Bold+White, spider.config.isRecursive)
-	fmt.Println(Bold+Blue+"Depth:"+Bold+White, spider.config.depth)
-	fmt.Println(Bold+Blue+"Path:"+Bold+White, spider.config.path+"\n"+Default)
+	fmt.Println(Bold + Italic + Magenta + "\\__Spider__/" + Default)
+	fmt.Println(
+		Bold+Blue+"  URL:"+Bold+White,
+		strings.TrimPrefix(spider.config.url, "https://"),
+	)
+	if strings.HasPrefix(spider.config.path, "/") ||
+		strings.HasPrefix(spider.config.path, "./") {
+		fmt.Println(Bold+Blue+"  Path:"+Bold+White, spider.config.path+Default)
+	} else {
+		fmt.Println(
+			Bold+Blue+"  Path:"+Bold+White, "./"+spider.config.path+Default,
+		)
+	}
+	if spider.config.isRecursive {
+		fmt.Println(
+			Bold + Blue + "  Recursive: " + Bold + Green + "✔" + Default)
+		fmt.Println(
+			Bold+Blue+"  Depth:"+Bold+White, spider.config.depth, "\n"+Default)
+	} else {
+		fmt.Println(
+			Bold + Blue + "  Recursive: " + Bold + Red + "✖\n" + Default)
+	}
 }
 
 func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error {
@@ -94,15 +107,14 @@ func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error {
 	spider.visited[rawURL] = true
 	spider.mutexCrawl.Unlock()
 
-	fmt.Println(Bold+Magenta+"Visite:  "+Bold+White, rawURL+Default)
+	fmt.Println(Magenta+"Visite:  "+Bold+White, rawURL+Default)
 
 	resp, err := http.Get(rawURL)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, Red+"Error:"+Default, err)
 		return err
 	}
-
 	defer resp.Body.Close()
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("GET %s: status %s", rawURL, resp.Status)
 	}
