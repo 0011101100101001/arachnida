@@ -1,11 +1,13 @@
 # Spider
 spider
+spider.exe
 data/
 !spider/
 !spider.go
 
 # Scorpion
 scorpion
+scorpion.exe
 !scorpion/
 target/
 Cargo.lock
