@@ -17,7 +17,7 @@ WHITE = "\033[37m"
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".bmp"}
 
 def get_download_dir(spider_args: list[str], spider_dir: str) -> Path:
-    path = Path("./data")
+    path = Path(f"{spider_dir}/data")
     for i, arg in enumerate(spider_args):
         if arg == "-p" and i + 1 < len(spider_args):
             path = Path(spider_dir) / Path(spider_args[i + 1].rstrip("/"))
@@ -70,8 +70,8 @@ def main() -> int:
 
     if spider_res.returncode != 0:
         print(
-            f"{BOLD}{RED}Bridge: spider failed with exit code "
-            f"{YELLOW}{spider_res.returncode}{DEFAULT}",
+            f"{BOLD}{RED}Bridge:{DEFAULT} spider failed with exit code "
+            f"{BOLD}{YELLOW}{spider_res.returncode}{DEFAULT}",
             file=sys.stderr,
         )
         return spider_res.returncode
@@ -79,7 +79,8 @@ def main() -> int:
     download_dir = get_download_dir(spider_args, spider_dir)
     if not download_dir.exists():
         print(
-            f"{BOLD}{RED}Bridge:{DEFAULT} can't find {download_dir}",
+            f"{BOLD}{RED}Bridge:{DEFAULT} can't find",
+            f"{BOLD}{WHITE}{download_dir}{DEFAULT}",
             file=sys.stderr,
         )
         return 1
