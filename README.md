@@ -14,12 +14,13 @@
 
 <hr>
 
-### Bridge
-Bridge script that connect these two programs.<br>
-First it takes and sends arguments to **Spider** then run **Scorpion** using the
-image dowloaded from the directory used in the first one.
+#### Bridge
+> Use **bridge.py** to connect these two programs. First it takes and sends
+arguments to **Spider** then run **Scorpion** using image downloaded from the
+directory given as path in the first program.
 
-#### Usage
-```sh
-./bridge.py [spider options] URL
-```
+- Usage
+
+    ```sh
+    ./bridge.py (spider options [-rlp]) URL
+    ```
