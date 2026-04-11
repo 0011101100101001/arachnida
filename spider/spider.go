@@ -72,7 +72,7 @@ func (spider *Spider) Run() error {
 }
 
 func (spider *Spider) PrintConfig() {
-	fmt.Println(Bold + Italic + Magenta + "\\__Spider__/" + Default)
+	fmt.Println(Bold + Italic + Magenta + "Spider" + Default)
 	fmt.Println(
 		Bold+Blue+"  URL:"+Bold+White,
 		strings.TrimPrefix(spider.config.url, "https://"),
@@ -99,8 +99,12 @@ func (spider *Spider) PrintConfig() {
 func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error {
 	defer spider.waitGroup.Done()
 
+	if recursionDepth == 0 {
+		return nil
+	}
+
 	spider.mutexCrawl.Lock()
-	if spider.visited[rawURL] || recursionDepth == 0 {
+	if spider.visited[rawURL] {
 		spider.mutexCrawl.Unlock()
 		return nil
 	}

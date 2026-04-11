@@ -12,6 +12,7 @@ SCORPION_BIN = SCORPION_DIR / "target/debug/scorpion"
 DEFAULT = "\033[0m"
 BOLD = "\033[1m"
 RED = "\033[31m"
+GREEN = "\033[32m"
 YELLOW = "\033[33m"
 BLUE = "\033[34m"
 WHITE = "\033[37m"
@@ -23,14 +24,19 @@ def check_compilation(
     name: str, path: str, binary: str, command: list[str]
 ) -> None:
     if not binary.exists():
-        print(f"{BOLD}{BLUE}Bridge:{WHITE} compiling {name}...{DEFAULT}")
-    try:
-        subprocess.run(
-            command, cwd=path, check=True, capture_output=True, text=True
-        )
+        try:
+            print(
+                f"{BOLD}{BLUE}Bridge:{WHITE} compiling {name}... {DEFAULT}",
+                end="",
+            )
+            subprocess.run(
+                command, cwd=path, check=True, capture_output=True, text=True
+            )
+            print(f"{BOLD}{GREEN}✔{DEFAULT}")
 
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"{name} failed to compile") from e
+        except subprocess.CalledProcessError as e:
+            print(f"{BOLD}{RED}✖{DEFAULT}")
+            raise RuntimeError(f"{name} failed to compile") from e
 
 
 def get_download_dir(spider_args: list[str], spider_dir: str) -> Path:
@@ -51,7 +57,7 @@ def run_spider(spider_args: list[str]) -> Path:
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
             f"spider failed with exit code ",
-            f"{BOLD}{YELLOW}{e.returncode}{DEFAULT}"
+            f"{BOLD}{YELLOW}{e.returncode}{DEFAULT}",
         ) from e
 
     return get_download_dir(spider_args, str(SPIDER_BIN.parent))
@@ -66,7 +72,7 @@ def run_scorpion(image_paths: list[str]) -> None:
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
             f"scorpion failed with exit code ",
-            f"{BOLD}{YELLOW}{e.returncode}{DEFAULT}"
+            f"{BOLD}{YELLOW}{e.returncode}{DEFAULT}",
         ) from e
 
 
@@ -91,7 +97,6 @@ def main() -> int:
             raise RuntimeError(
                 f"can't find {BOLD}{WHITE}{download_dir}{DEFAULT}"
             )
-            return 1
 
         image_paths = [
             str(path)
