@@ -6,20 +6,20 @@
 </pre>
 </div>
 
-### [Spider](spider)
+### **[Spider](spider)**
 > Web Crawler - **Go**
 
-### [Scorpion](scorpion)
+### **[Scorpion](scorpion)**
 > Image Metadata Manager - **Rust**
 
 <hr>
 
-#### Bridge
+#### **Bridge**
 > Use **bridge.py** to connect these two programs. First it takes and sends
 arguments to **Spider** then run **Scorpion** using image downloaded from the
 directory given as path in the first program.
 
-- Usage
+- **Usage**
 
     ```sh
     ./bridge.py (spider options [-rlp]) URL
