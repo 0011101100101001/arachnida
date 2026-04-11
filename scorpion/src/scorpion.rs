@@ -1,31 +1,24 @@
+use crate::style::*;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::Metadata;
 use std::path::{Path, PathBuf};
+use crate::format::{Bmp, Format, Gif, Jpeg, Png};
 
-pub const DEFAULT: &str = "\x1b[0m";
-pub const BOLD: &str = "\x1b[1m";
-pub const ITALIC: &str = "\x1b[3m";
-
-pub const RED: &str = "\x1b[31m";
-pub const GREEN: &str = "\x1b[32m";
-pub const YELLOW: &str = "\x1b[33m";
-pub const BLUE: &str = "\x1b[34m";
-pub const MAGENTA: &str = "\x1b[35m";
-pub const CYAN: &str = "\x1b[36m";
-pub const WHITE: &str = "\x1b[37m";
-
-pub struct Image {
+pub struct Image<F> {
     pub name: String,
     pub path: PathBuf,
     pub size: u64,
     pub extension: String,
     pub metadata: Metadata,
+    pub format: F,
 }
 
+type DynImage = Image<Box<dyn Format>>;
+
 pub struct Scorpion {
-    pub images: HashMap<String, Image>,
+    pub images: HashMap<String, DynImage>,
 }
 
 impl Scorpion {
@@ -68,27 +61,38 @@ impl Scorpion {
                 .unwrap_or(&arg)
                 .to_string();
 
+            let format: Box<dyn Format> = match extension.as_str() {
+                "png" => Box::new(Png),
+                "jpg" | "jpeg" => Box::new(Jpeg),
+                "gif" => Box::new(Gif),
+                "bmp" => Box::new(Bmp),
+                _ => continue,
+            };
+
             let image = Image {
                 name: file_name.clone(),
                 path: path.to_path_buf(),
                 size: meta.len(),
                 metadata: meta,
                 extension: extension,
+                format: format,
             };
 
             self.images.insert(file_name, image);
         }
     }
 
-    pub fn images(&self) -> &HashMap<String, Image> {
+    pub fn images(&self) -> &HashMap<String, DynImage> {
         &self.images
     }
 
     pub fn print_images(&self) -> () {
-        for (name, image) in self.images() {
+        for (_, image) in self.images() {
+            _ = image.metadata;
+            _ = image.format;
             println!(
                 "{}{}{}: {}{} bytes ({})",
-                BOLD, WHITE, name, DEFAULT, image.size, image.extension,
+                BOLD, WHITE, image.name, DEFAULT, image.size, image.extension,
             );
         }
     }

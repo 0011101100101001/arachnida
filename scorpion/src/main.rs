@@ -1,9 +1,12 @@
+mod format;
 mod gui;
 mod scorpion;
+mod style;
 
 use eframe::NativeOptions;
-use scorpion::*;
+use scorpion::Scorpion;
 use std::env;
+use style::*;
 
 fn init_eframe() -> NativeOptions {
     let mut native_options = eframe::NativeOptions::default();
@@ -22,7 +25,7 @@ fn main() -> eframe::Result<()> {
         std::process::exit(2);
     }
 
-    println!("{}{}{}~Scorpion~{}", BOLD, ITALIC, MAGENTA, DEFAULT);
+    println!("{}{}{}Scorpion{}", BOLD, ITALIC, MAGENTA, DEFAULT);
 
     let mut scorpion = Scorpion::new();
 
