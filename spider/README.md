@@ -7,12 +7,12 @@
 </pre>
 </div>
 
-### Build
+### **Build**
 ```sh
 go build
 ```
 
-### Usage
+### **Usage**
 ```sh
 ./spider [-rlph] URL
 ```
@@ -29,6 +29,18 @@ go build
 
       -h    display help
 
-### Description
+### **Description**
 
-#### Architecture
+#### **Crawler**
+> Parse a web domain through a given URL to download specific image formats
+> (JPEG | PNG | GIF | BMP).
+
+#### **Architecture**
+> Built with **Go** standard library only.<br>
+> Make use of **goroutines** to implement a multihreaded flow as shown below in
+> the logic diagram of the core function **CrawlUrl**.
+
+```go
+func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error
+```
+![Diagram](asset/spider.drawio.svg)
