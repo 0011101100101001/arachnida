@@ -4,8 +4,10 @@ import sys
 import subprocess
 from pathlib import Path
 
-SPIDER_BIN = "./spider/spider"
-SCORPION_BIN = "./scorpion/target/debug/scorpion"
+SPIDER_DIR = Path("spider")
+SCORPION_DIR = Path("scorpion")
+SPIDER_BIN = SPIDER_DIR / "spider"
+SCORPION_BIN = SCORPION_DIR / "target/debug/scorpion"
 
 DEFAULT = "\033[0m"
 BOLD = "\033[1m"
@@ -16,6 +18,23 @@ WHITE = "\033[37m"
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".bmp"}
 
+
+def check_compilation(
+    name: str, path: str, binary: str, command: list[str]
+) -> None:
+    if not binary.exists():
+        print(f"{BOLD}{BLUE}Bridge:{WHITE} compiling {name}...{DEFAULT}")
+    try:
+        subprocess.run(
+            command, cwd=path, check=True, capture_output=True, text=True
+        )
+
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"{BOLD}{RED}Bridge:{DEFAULT} {name} failed to compile"
+        ) from e
+
+
 def get_download_dir(spider_args: list[str], spider_dir: str) -> Path:
     path = Path(f"{spider_dir}/data")
     for i, arg in enumerate(spider_args):
@@ -25,83 +44,83 @@ def get_download_dir(spider_args: list[str], spider_dir: str) -> Path:
     return path
 
 
-def check_compilation() -> int:
-    # Compile Spider
-    binary_path = Path(SPIDER_BIN)
-    if not binary_path.exists():
-        spider_build = subprocess.run(
-            ["go", "build", "-o", "spider"], cwd="spider"
-        )
-        if spider_build.returncode != 0:
-            print(
-                f"{BOLD}{RED}Bridge:{DEFAULT} failed to build spider",
-                file=sys.stderr,
-            )
-            return spider_build.returncode
+def run_spider(spider_args: list[str]) -> Path:
+    try:
+        print(f"{BOLD}{BLUE}Bridge:{WHITE} launching spider...{DEFAULT}\n")
+        cmd = ["./" + str(Path(SPIDER_BIN).name)] + spider_args
+        subprocess.run(cmd, cwd=SPIDER_DIR, check=True)
 
-    # Compile Scorpion
-    binary_path = Path(SCORPION_BIN)
-    if not binary_path.exists():
-        scorpion_build = subprocess.run(["cargo", "build"], cwd="scorpion")
-        if scorpion_build.returncode != 0:
-            print(
-                f"{BOLD}{RED}Bridge:{DEFAULT} failed to build scorpion",
-                file=sys.stderr,
-            )
-            return scorpion_build.returncode
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"{BOLD}{RED}Bridge:{DEFAULT} spider failed with exit code "
+            f"{BOLD}{YELLOW}{e.returncode}{DEFAULT}"
+        ) from e
 
-    return 0
+    return get_download_dir(spider_args, str(SPIDER_BIN.parent))
+
+
+def run_scorpion(image_paths: list[str]) -> None:
+    try:
+        print(f"\n{BOLD}{BLUE}Bridge: {WHITE}launching scorpion...{DEFAULT}\n")
+        cmd = [SCORPION_BIN, *image_paths]
+        subprocess.call(cmd)
+
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"{BOLD}{RED}Bridge:{DEFAULT} scorpion failed with exit code "
+            f"{BOLD}{YELLOW}{e.returncode}{DEFAULT}"
+        ) from e
 
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print("Usage: ./bridge.py [spider options] URL", file=sys.stderr)
+        print(
+            f"{BOLD}{WHITE}Usage:{DEFAULT} ./bridge.py [spider options] URL",
+            file=sys.stderr,
+        )
         return 2
 
-    if (code := check_compilation()) != 0:
-        return code
-
-    # Run Spider
-    print(f"{BOLD}{BLUE}Bridge:{WHITE} launching spider...{DEFAULT}\n")
-    spider_args = sys.argv[1:]
-    spider_cmd = ["./" + str(Path(SPIDER_BIN).name)] + spider_args
-    spider_dir = str(Path(SPIDER_BIN).parent)
-    spider_res = subprocess.run(spider_cmd, cwd=spider_dir)
-
-    if spider_res.returncode != 0:
-        print(
-            f"{BOLD}{RED}Bridge:{DEFAULT} spider failed with exit code "
-            f"{BOLD}{YELLOW}{spider_res.returncode}{DEFAULT}",
-            file=sys.stderr,
+    try:
+        check_compilation(
+            "spider", SPIDER_DIR, SPIDER_BIN, ["go", "build", "-o", "spider"]
         )
-        return spider_res.returncode
-
-    download_dir = get_download_dir(spider_args, spider_dir)
-    if not download_dir.exists():
-        print(
-            f"{BOLD}{RED}Bridge:{DEFAULT} can't find",
-            f"{BOLD}{WHITE}{download_dir}{DEFAULT}",
-            file=sys.stderr,
+        check_compilation(
+            "scorpion", SCORPION_DIR, SCORPION_BIN, ["cargo", "build"]
         )
+
+        download_dir = run_spider(sys.argv[1:])
+        if not download_dir.exists():
+            print(
+                f"{BOLD}{RED}Bridge:{DEFAULT} can't find",
+                f"{BOLD}{WHITE}{download_dir}{DEFAULT}",
+                file=sys.stderr,
+            )
+            return 1
+
+        image_paths = [
+            str(path)
+            for path in sorted(download_dir.iterdir())
+            if path.is_file() and path.suffix.lower() in IMAGE_EXTS
+        ]
+
+        if not image_paths:
+            print(
+                f"{BOLD}{RED}Bridge:{DEFAULT} no images in {download_dir}",
+                file=sys.stderr,
+            )
+            return 1
+
+        run_scorpion(image_paths)
+
+    except RuntimeError as e:
+        print(f"{e}", file=sys.stderr)
         return 1
 
-    image_paths = [
-        str(path)
-        for path in sorted(download_dir.iterdir())
-        if path.is_file() and path.suffix.lower() in IMAGE_EXTS
-    ]
+    except KeyboardInterrupt:
+        print(f"\n{BOLD}{RED}Bridge:{DEFAULT} abording...", file=sys.stderr)
+        return 1
 
-    if not image_paths:
-        print(
-            f"{BOLD}{RED}Bridge:{DEFAULT} no images in {download_dir}",
-            file=sys.stderr,
-        )
-        return 0
-
-    # Run Scorpion
-    print(f"\n{BOLD}{BLUE}Bridge: {WHITE}launching scorpion...{DEFAULT}\n")
-    scorpion_cmd = [SCORPION_BIN, *image_paths]
-    return subprocess.call(scorpion_cmd)
+    return 0
 
 
 if __name__ == "__main__":
