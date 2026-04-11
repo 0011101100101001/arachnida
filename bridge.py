@@ -30,9 +30,7 @@ def check_compilation(
         )
 
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(
-            f"{BOLD}{RED}Bridge:{DEFAULT} {name} failed to compile"
-        ) from e
+        raise RuntimeError(f"{name} failed to compile") from e
 
 
 def get_download_dir(spider_args: list[str], spider_dir: str) -> Path:
@@ -52,7 +50,7 @@ def run_spider(spider_args: list[str]) -> Path:
 
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
-            f"{BOLD}{RED}Bridge:{DEFAULT} spider failed with exit code "
+            f"spider failed with exit code ",
             f"{BOLD}{YELLOW}{e.returncode}{DEFAULT}"
         ) from e
 
@@ -67,7 +65,7 @@ def run_scorpion(image_paths: list[str]) -> None:
 
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
-            f"{BOLD}{RED}Bridge:{DEFAULT} scorpion failed with exit code "
+            f"scorpion failed with exit code ",
             f"{BOLD}{YELLOW}{e.returncode}{DEFAULT}"
         ) from e
 
@@ -90,10 +88,8 @@ def main() -> int:
 
         download_dir = run_spider(sys.argv[1:])
         if not download_dir.exists():
-            print(
-                f"{BOLD}{RED}Bridge:{DEFAULT} can't find",
-                f"{BOLD}{WHITE}{download_dir}{DEFAULT}",
-                file=sys.stderr,
+            raise RuntimeError(
+                f"can't find {BOLD}{WHITE}{download_dir}{DEFAULT}"
             )
             return 1
 
@@ -104,16 +100,14 @@ def main() -> int:
         ]
 
         if not image_paths:
-            print(
-                f"{BOLD}{RED}Bridge:{DEFAULT} no images in {download_dir}",
-                file=sys.stderr,
+            raise RuntimeError(
+                f"no images in {BOLD}{WHITE}{download_dir}{DEFAULT}"
             )
-            return 1
 
         run_scorpion(image_paths)
 
     except RuntimeError as e:
-        print(f"{e}", file=sys.stderr)
+        print(f"{BOLD}{RED}Bridge:{DEFAULT} {e}", file=sys.stderr)
         return 1
 
     except KeyboardInterrupt:
