@@ -33,7 +33,7 @@ go build
 
 #### **Crawler**
 > Parse a web domain through a given URL to download specific image formats
-> (JPEG | PNG | GIF | BMP).
+> (**JPEG** | **PNG** | **GIF** | **BMP**).
 
 #### **Architecture**
 > Built with **Go** standard library only.<br>
@@ -43,4 +43,6 @@ go build
 ```go
 func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error
 ```
-![Diagram](asset/spider.drawio.svg)
+<p align="center">
+  <img src="asset/spider-diagram.svg" alt="CrawlURL diagram">
+</p>
