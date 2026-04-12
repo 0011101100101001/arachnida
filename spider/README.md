@@ -37,12 +37,12 @@ go build
 
 #### **Architecture**
 > Built with **Go** standard library only.<br>
-> Make use of **goroutines** to implement a multihreaded flow as shown below in
+> Make use of **goroutines** to implement a multithreaded flow as shown below in
 > the logic diagram of the core function **CrawlUrl**.
 
 ```go
 func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error
 ```
-<p align="center">
+<div align="center">
   <img src="asset/spider-diagram.svg" alt="CrawlURL diagram">
-</p>
+</div>
