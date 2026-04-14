@@ -46,3 +46,14 @@ func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error
 <div align="center">
   <img src="asset/spider-diagram.svg" alt="CrawlURL diagram">
 </div>
+
+#### **Demo**
+- **Default**
+<div align="center">
+  <img src="asset/spider-default.gif" alt="Default Demo">
+</div>
+
+- **Recursive**
+<div align="center">
+  <img src="asset/spider-recursive.gif" alt="Recursivity Demo">
+</div>
