@@ -15,9 +15,9 @@
 <hr>
 
 #### **Bridge**
-> Use **bridge.py** to connect these two programs. First it takes and sends
-arguments to **Spider** then run **Scorpion** using image downloaded from the
-directory given as path in the first program.
+> Use **bridge.py** to connect these two programs. It takes and sends arguments
+to **Spider** then runs **Scorpion** using images downloaded from the directory
+given as path in the first program.
 
 - **Usage**
 
