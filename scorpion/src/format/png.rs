@@ -1,15 +1,19 @@
 use std::io;
 use std::path::Path;
+use std::collections::HashMap;
 
-use super::Format;
-pub struct Png;
+#[derive(Default)]
+pub struct Png {
+    pub width: u32,
+    pub height: u32,
+    pub bit_depth: u8,
+    pub color_type: u8, // e.g., grayscale, truecolor, indexed
+    pub is_interlaced: bool,
+    pub text_chunks: HashMap<String, String>, // Author, Description, etc.
+}
 
-impl Format for Png {
-    fn extension(&self) -> &'static str {
-        "png"
-    }
-
-    fn read_metadata(&self, path: &Path) -> io::Result<String> {
+impl Png {
+    pub fn read_metadata(&self, path: &Path) -> io::Result<String> {
         Ok(format!("PNG metadata for {}", path.display()))
     }
 }

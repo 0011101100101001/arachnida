@@ -1,16 +1,18 @@
 use std::io;
 use std::path::Path;
 
-use super::Format;
+#[derive(Default)]
+pub struct Bmp {
+    pub width: u32,
+    pub height: i32, // Can be negative for top-down DIBs
+    pub bits_per_pixel: u16,
+    pub compression: u32,
+    pub image_size: u32,
+    pub colors_used: u32,
+}
 
-pub struct Bmp;
-
-impl Format for Bmp {
-    fn extension(&self) -> &'static str {
-        "bmp"
-    }
-
-    fn read_metadata(&self, path: &Path) -> io::Result<String> {
+impl Bmp {
+    pub fn read_metadata(&self, path: &Path) -> io::Result<String> {
         Ok(format!("BMP metadata for {}", path.display()))
     }
 }

@@ -1,24 +1,41 @@
+use crate::format::{Bmp, Gif, Jpeg, Png};
 use crate::style::*;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::Metadata;
+use std::io;
 use std::path::{Path, PathBuf};
-use crate::format::{Bmp, Format, Gif, Jpeg, Png};
 
-pub struct Image<F> {
-    pub name: String,
+pub enum Format {
+    Bmp(Bmp),
+    Gif(Gif),
+    Jpeg(Jpeg),
+    Png(Png),
+}
+
+impl Format {
+    pub fn read_metadata(&self, path: &Path) -> io::Result<String> {
+        match self {
+            Format::Png(png) => png.read_metadata(path),
+            Format::Jpeg(jpeg) => jpeg.read_metadata(path),
+            Format::Gif(gif) => gif.read_metadata(path),
+            Format::Bmp(bmp) => bmp.read_metadata(path),
+        }
+    }
+}
+
+pub struct Image {
+    pub filename: String,
     pub path: PathBuf,
     pub size: u64,
     pub extension: String,
     pub metadata: Metadata,
-    pub format: F,
+    pub format: Format,
 }
 
-type DynImage = Image<Box<dyn Format>>;
-
 pub struct Scorpion {
-    pub images: HashMap<String, DynImage>,
+    pub images: HashMap<String, Image>,
 }
 
 impl Scorpion {
@@ -55,22 +72,22 @@ impl Scorpion {
                 continue;
             };
 
-            let file_name = path
+            let filename = path
                 .file_name()
                 .and_then(|s| s.to_str())
                 .unwrap_or(&arg)
                 .to_string();
 
-            let format: Box<dyn Format> = match extension.as_str() {
-                "png" => Box::new(Png),
-                "jpg" | "jpeg" => Box::new(Jpeg),
-                "gif" => Box::new(Gif),
-                "bmp" => Box::new(Bmp),
+            let format = match extension.as_str() {
+                "png" => Format::Png(Png::default()),
+                "jpg" | "jpeg" => Format::Jpeg(Jpeg::default()),
+                "gif" => Format::Gif(Gif::default()),
+                "bmp" => Format::Bmp(Bmp::default()),
                 _ => continue,
             };
 
             let image = Image {
-                name: file_name.clone(),
+                filename: filename.clone(),
                 path: path.to_path_buf(),
                 size: meta.len(),
                 metadata: meta,
@@ -78,11 +95,19 @@ impl Scorpion {
                 format: format,
             };
 
-            self.images.insert(file_name, image);
+            match image.format.read_metadata(&image.path) {
+                Ok(metdata_string) => println!("{}", metdata_string),
+                Err(e) => eprintln!(
+                    "Failed to read metadata for {}: {}",
+                    image.filename, e
+                ),
+            }
+
+            self.images.insert(filename, image);
         }
     }
 
-    pub fn images(&self) -> &HashMap<String, DynImage> {
+    pub fn images(&self) -> &HashMap<String, Image> {
         &self.images
     }
 
@@ -92,7 +117,12 @@ impl Scorpion {
             _ = image.format;
             println!(
                 "{}{}{}: {}{} bytes ({})",
-                BOLD, WHITE, image.name, DEFAULT, image.size, image.extension,
+                BOLD,
+                WHITE,
+                image.filename,
+                DEFAULT,
+                image.size,
+                image.extension,
             );
         }
     }

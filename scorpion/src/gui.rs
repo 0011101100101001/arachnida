@@ -4,9 +4,6 @@ use eframe::*;
 impl eframe::App for Scorpion {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut Frame) {
         egui::CentralPanel::default().show_inside(ui, |ui| {
-            ui.heading("Scorpion");
-            ui.separator();
-
             ui.label(format!("{} images loaded", self.images().len()));
             ui.separator();
 
