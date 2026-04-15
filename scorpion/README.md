@@ -18,4 +18,4 @@ cargo run FILE1 [FILE2 ...]
 ```
 
 ### **Description**
-> Work in progess..
+> Work in progress...
