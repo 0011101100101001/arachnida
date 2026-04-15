@@ -7,16 +7,15 @@
 </pre>
 </div>
 
-### Build
+### **Build**
 ```sh
 cargo build
 ```
 
-### Usage
+### **Usage**
 ```sh
 cargo run FILE1 [FILE2 ...]
 ```
 
-### Description
-
-#### Architecture
+### **Description**
+> Work in progess..
