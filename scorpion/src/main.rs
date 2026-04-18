@@ -20,12 +20,12 @@ fn main() -> eframe::Result<()> {
     if env::args().len() < 2 {
         eprintln!(
             "{}{}Usage: ./scorpion FILE1 [FILE2 ...]{}",
-            BOLD, WHITE, DEFAULT
+            BOLD, WHITE, RESET
         );
         std::process::exit(2);
     }
 
-    println!("{}{}{}Scorpion{}", BOLD, ITALIC, MAGENTA, DEFAULT);
+    println!("{}{}{}Scorpion{}", BOLD, ITALIC, MAGENTA, RESET);
 
     let mut scorpion = Scorpion::new();
 

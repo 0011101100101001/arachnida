@@ -48,14 +48,14 @@ func parseConfig() (Config, error) {
 func main() {
 	config, err := parseConfig()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, Bold+Red+"Error:"+Default, err.Error())
+		fmt.Fprintln(os.Stderr, Bold+Red+"Error:"+Reset, err.Error())
 		fmt.Fprintln(os.Stderr,
-			Bold+White+"Usage:"+Default+"./spider [-rlp] URL")
+			Bold+White+"Usage:"+Reset+"./spider [-rlp] URL")
 		os.Exit(2)
 	}
 
 	spider := NewSpider(config)
 	if err := spider.Run(); err != nil {
-		fmt.Fprintln(os.Stderr, Bold+Red+"Error:"+Default, err.Error())
+		fmt.Fprintln(os.Stderr, Bold+Red+"Error:"+Reset, err.Error())
 	}
 }

@@ -59,7 +59,7 @@ impl Scorpion {
             {
                 eprint!(
                     "{}{}Error: {}{} have not a valid extension.",
-                    BOLD, RED, arg, DEFAULT
+                    BOLD, RED, arg, RESET
                 );
                 continue;
             }
@@ -67,7 +67,7 @@ impl Scorpion {
             let Ok(meta) = fs::metadata(path) else {
                 eprint!(
                     "{}{}Error: {}{} failed to read metadata.",
-                    BOLD, RED, arg, DEFAULT
+                    BOLD, RED, arg, RESET
                 );
                 continue;
             };
@@ -120,7 +120,7 @@ impl Scorpion {
                 BOLD,
                 WHITE,
                 image.filename,
-                DEFAULT,
+                RESET,
                 image.size,
                 image.extension,
             );

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	Default = "\033[0m"
+	Reset   = "\033[0m"
 	Bold    = "\033[1m"
 	Italic  = "\033[3m"
 	Red     = "\033[31m"
@@ -63,7 +63,7 @@ func (spider *Spider) Run() error {
 	go func() {
 		err := spider.CrawlURL(spider.config.depth, spider.config.url)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, Bold+Red+"Error:   "+Default, err)
+			fmt.Fprintln(os.Stderr, Bold+Red+"Error:   "+Reset, err)
 		}
 	}()
 	spider.waitGroup.Wait()
@@ -72,27 +72,27 @@ func (spider *Spider) Run() error {
 }
 
 func (spider *Spider) PrintConfig() {
-	fmt.Println(Bold + Italic + Magenta + "Spider" + Default)
+	fmt.Println(Bold + Italic + Magenta + "Spider" + Reset)
 	fmt.Println(
 		Bold+Blue+"  URL:"+Bold+White,
 		strings.TrimPrefix(spider.config.url, "https://"),
 	)
 	if strings.HasPrefix(spider.config.path, "/") ||
 		strings.HasPrefix(spider.config.path, "./") {
-		fmt.Println(Bold+Blue+"  Path:"+Bold+White, spider.config.path+Default)
+		fmt.Println(Bold+Blue+"  Path:"+Bold+White, spider.config.path+Reset)
 	} else {
 		fmt.Println(
-			Bold+Blue+"  Path:"+Bold+White, "./"+spider.config.path+Default,
+			Bold+Blue+"  Path:"+Bold+White, "./"+spider.config.path+Reset,
 		)
 	}
 	if spider.config.isRecursive {
 		fmt.Println(
-			Bold + Blue + "  Recursive: " + Bold + Green + "✔" + Default)
+			Bold + Blue + "  Recursive: " + Bold + Green + "✔" + Reset)
 		fmt.Println(
-			Bold+Blue+"  Depth:"+Bold+White, spider.config.depth, "\n"+Default)
+			Bold+Blue+"  Depth:"+Bold+White, spider.config.depth, "\n"+Reset)
 	} else {
 		fmt.Println(
-			Bold + Blue + "  Recursive: " + Bold + Red + "✖\n" + Default)
+			Bold + Blue + "  Recursive: " + Bold + Red + "✖\n" + Reset)
 	}
 }
 
@@ -111,7 +111,7 @@ func (spider *Spider) CrawlURL(recursionDepth uint, rawURL string) error {
 	spider.visited[rawURL] = true
 	spider.mutexCrawl.Unlock()
 
-	fmt.Println(Magenta+"Visite:  "+Bold+White, rawURL+Default)
+	fmt.Println(Magenta+"Visite:  "+Bold+White, rawURL+Reset)
 
 	resp, err := http.Get(rawURL)
 	if err != nil {
@@ -181,7 +181,7 @@ func (spider *Spider) DownloadImage(imageURL string) error {
 
 	resp, err := http.Get(imageURL)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Default, imageURL)
+		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Reset, imageURL)
 		return err
 	}
 	defer resp.Body.Close()
@@ -192,17 +192,17 @@ func (spider *Spider) DownloadImage(imageURL string) error {
 
 	out, err := os.Create(filePath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Default, filePath)
+		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Reset, filePath)
 		return err
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Default, imageURL)
+		fmt.Fprintln(os.Stderr, Bold+Red+"Failed:  "+Reset, imageURL)
 		return err
 	}
-	fmt.Println(Bold+Green+"Download:"+Bold+White, imageURL+Default)
+	fmt.Println(Bold+Green+"Download:"+Bold+White, imageURL+Reset)
 
 	spider.mutexImage.Lock()
 	spider.downloaded[imageURL] = true
